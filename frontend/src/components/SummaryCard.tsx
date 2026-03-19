@@ -1,4 +1,3 @@
-import React from "react";
 import { MeetingSummary } from "@/types/summary";
 import {
   Card,
