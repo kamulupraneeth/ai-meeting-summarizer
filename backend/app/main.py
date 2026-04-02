@@ -2,6 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints import summarize
 
+from app.database import engine, Base
+
+Base.metadata.create_all(bind=engine)
+
+from app.api.v1.endpoints import summarize
 
 app = FastAPI(title="AI Meeting Summarizer API")
 
