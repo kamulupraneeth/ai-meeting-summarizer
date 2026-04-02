@@ -1,13 +1,21 @@
-import urllib.parse
+import os
+from urllib.parse import quote_plus
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
 
-raw_password = "Chintu@3511"
+load_dotenv()
 
-safe_password = urllib.parse.quote_plus(raw_password)
+user = os.getenv("DB_USER")
+password = os.getenv("DB_PASSWORD")
+host = os.getenv("DB_HOST")
+port = os.getenv("DB_PORT")
+db_name = os.getenv("DB_NAME")
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:{safe_password}@localhost:5432/meeting_db"
+safe_password = quote_plus(password) if password else ""
+
+SQLALCHEMY_DATABASE_URL = f"postgresql://{user}:{safe_password}@{host}:{port}/{db_name}"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
