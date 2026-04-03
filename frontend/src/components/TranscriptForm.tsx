@@ -2,109 +2,181 @@
 
 import { useState } from "react";
 import { SummaryCard } from "./SummaryCard";
-import { toast } from "sonner";
-import { Loader2, Sparkles, Trash2, Wand2 } from "lucide-react";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
 import { SummaryCardSkeleton } from "@/components/SummaryCardSkeleton";
 import { useSummarize } from "@/hooks/useSummarize";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
+import { toast } from "sonner";
+import {
+  Loader2,
+  Sparkles,
+  Wand2,
+  Terminal,
+  BarChart3,
+  Copy,
+} from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function TranscriptForm() {
   const [transcript, setTranscript] = useState("");
+  const [activeTab, setActiveTab] = useState("live");
 
-  const { summarize, loading, summary, setSummary } = useSummarize();
+  const {
+    summarize,
+    startStream,
+    summary,
+    streamedText,
+    isStreaming,
+    loading,
+    isProcessing,
+    reset,
+  } = useSummarize();
 
-  const handleSummarize = async () => {
-    if (!transcript.trim()) {
-      toast.error("Please paste a transcript first");
-      return;
+  const handleGenerate = async (mode: "structured" | "stream") => {
+    if (!transcript.trim())
+      return toast.error("Please paste a transcript first");
+
+    if (mode === "stream") {
+      setActiveTab("live");
+      await startStream(transcript);
+    } else {
+      setActiveTab("analysis");
+      summarize(transcript);
     }
-    await summarize(transcript);
-  };
-
-  const clearForm = () => {
-    setTranscript("");
-    setSummary(null);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <header className="text-center space-y-4">
-        <div className="inline-flex items-center justify-center p-2 bg-secondary rounded-full mb-2">
-          <Sparkles className="w-5 h-5 text-primary mr-2" />
-          <span className="text-xs font-bold uppercase tracking-wider text-secondary-foreground">
-            AI Powered Analysis
-          </span>
-        </div>
-        <h1 className="text-5xl font-black tracking-tighter text-slate-900 lg:text-6xl">
-          Meeting <span className="text-primary">Intelligence</span>
+    <div className="max-w-5xl mx-auto p-6 space-y-10">
+      {/* --- HEADER --- */}
+      <div className="text-center space-y-2">
+        <h1 className="text-4xl font-extrabold tracking-tight text-slate-900">
+          Meeting Intelligence <span className="text-primary">v2.0</span>
         </h1>
-        <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-          Leverage LLMs to extract actionable insights from your raw transcripts
-          instantly.
+        <p className="text-slate-500">
+          Transform raw transcripts into structured corporate insights.
         </p>
-      </header>
-      <div className="bg-card border border-border rounded-3xl p-8 shadow-2xl shadow-slate-200/50 transition-all hover:shadow-primary/5">
-        <div className="relative group">
-          <Textarea
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            placeholder="Paste your meeting transcript here (Zoom, Teams, etc.)..."
-            className="w-full h-64 p-4 text-slate-900 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
-          />
+      </div>
 
-          {transcript && !loading && (
-            <Button
-              onClick={clearForm}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
-              title="Clear text"
-              variant="ghost"
-            >
-              <Trash2 size={20} />
-            </Button>
-          )}
-        </div>
+      {/* --- INPUT SECTION --- */}
+      <div className="bg-white border rounded-3xl p-6 shadow-sm">
+        <Textarea
+          value={transcript}
+          onChange={(e) => setTranscript(e.target.value)}
+          placeholder="Paste meeting transcript here..."
+          className="h-48 resize-none border-none bg-slate-50 focus-visible:ring-0 text-lg"
+        />
 
-        <div className="mt-6">
+        <div className="flex gap-3 mt-4">
           <Button
-            onClick={handleSummarize}
-            disabled={loading || !transcript.trim()}
-            className="group w-full py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg flex items-center justify-center gap-2 transition-all shadow-lg hover:opacity-90 active:scale-[0.98] disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed disabled:shadow-none cursor-pointer"
+            onClick={() => handleGenerate("stream")}
+            disabled={isProcessing}
+            className="flex-1 h-12 rounded-xl bg-slate-900"
+          >
+            {isStreaming ? (
+              <Loader2 className="animate-spin mr-2" />
+            ) : (
+              <Terminal className="mr-2" size={18} />
+            )}
+            Run Live Stream
+          </Button>
+
+          <Button
+            onClick={() => handleGenerate("structured")}
+            disabled={isProcessing}
+            variant="outline"
+            className="flex-1 h-12 rounded-xl border-primary text-primary hover:bg-primary/5"
           >
             {loading ? (
-              <>
-                <Loader2 className="animate-spin" size={24} />
-                Summarizing
-              </>
+              <Loader2 className="animate-spin mr-2" />
             ) : (
-              <>
-                <Wand2
-                  size={20}
-                  className="group-hover:rotate-12 transition-transform"
-                />
-                Summarize Meeting
-              </>
+              <BarChart3 className="mr-2" size={18} />
             )}
+            Deep Analysis (JSON)
           </Button>
         </div>
+      </div>
 
-        {/* Show Results with a nice entrance animation */}
-        {(loading || summary) && (
-          <div className="mt-12 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-slate-800">
-                {loading ? "Analyzing Meeting..." : "Generated Insights"}
-              </h2>
-              <div className="h-px flex-1 bg-slate-100 ml-4"></div>
-            </div>
-            {loading ? (
-              <SummaryCardSkeleton />
-            ) : (
-              summary && <SummaryCard data={summary} />
+      {/* --- OUTPUT TABS (The "SaaS" Look) --- */}
+      {(summary || streamedText || isProcessing) && (
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full animate-in fade-in slide-in-from-bottom-4"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <TabsList className="bg-slate-100 p-1 rounded-xl">
+              <TabsTrigger
+                value="live"
+                className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <Sparkles size={14} className="mr-2" /> Live Feed
+              </TabsTrigger>
+              <TabsTrigger
+                value="analysis"
+                className="rounded-lg px-6 data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              >
+                <BarChart3 size={14} className="mr-2" /> Structured Analysis
+              </TabsTrigger>
+            </TabsList>
+
+            {streamedText && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(streamedText);
+                  toast.success("Copied stream to clipboard");
+                }}
+              >
+                <Copy size={14} className="mr-2" /> Copy Output
+              </Button>
             )}
           </div>
-        )}
-      </div>
+
+          {/* TAB 1: LIVE STREAM CONTENT */}
+          <TabsContent value="live" className="mt-0">
+            <div className="bg-slate-900 rounded-2xl p-8 text-slate-300 font-mono text-sm leading-relaxed min-h-[300px] shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-primary/30 overflow-hidden">
+                {isStreaming && (
+                  <div className="h-full bg-primary animate-progress w-full" />
+                )}
+              </div>
+
+              {streamedText ? (
+                <div className="whitespace-pre-wrap">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {streamedText}
+                  </ReactMarkdown>
+                  {isStreaming && (
+                    <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full space-y-4 py-20">
+                  <Terminal size={40} className="text-slate-700" />
+                  <p className="text-slate-600">Waiting for live signal...</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          {/* TAB 2: STRUCTURED ANALYSIS CONTENT */}
+          <TabsContent value="analysis" className="mt-0">
+            {loading ? (
+              <SummaryCardSkeleton />
+            ) : summary ? (
+              <SummaryCard data={summary} />
+            ) : (
+              <div className="border-2 border-dashed rounded-2xl py-20 flex flex-col items-center justify-center text-slate-400">
+                <BarChart3 size={40} className="mb-2 opacity-20" />
+                <p>Run Deep Analysis to see structured cards.</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
