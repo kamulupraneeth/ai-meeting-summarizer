@@ -6,7 +6,9 @@ class APIModel(BaseModel):
         populate_by_name=True, 
         str_strip_whitespace=True
     )
-
+class MeetingInfo(BaseModel):
+    meeting_name: str = Field(alias="MeetingName")
+    date: str = Field(alias="Date")
 class Participant(APIModel):
     name: str = Field(..., alias="Name") 
     role: str = Field(default="Participant", alias="Role")
@@ -14,15 +16,15 @@ class Participant(APIModel):
 class DiscussionPoint(APIModel):
     topic: str = Field(..., alias="Topic")
     description: str = Field(..., alias="Description")
-    action_item: Optional[str] = Field(None, alias="Action") 
+    action: Optional[str] = Field(None, alias="Action") 
 
 class ActionItem(APIModel):
     assignee: str = Field(..., alias="Assignee") 
-    task: str = Field(..., alias="Description") 
+    description: str = Field(..., alias="Description") 
     priority: str = Field(default="Medium") 
 
 class MeetingMetadata(APIModel):
-    title: str = Field(..., alias="MeetingName")
+    meeting_name: str = Field(..., alias="MeetingName")
     date: str = Field(default="Unknown Date", alias="Date")
     sentiment: str = Field(default="Neutral")
 
